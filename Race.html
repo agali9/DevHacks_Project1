@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Races</title>
+    <style>
+        body {
+            font-family: 'Papyrus', sans-serif;
+            text-align: center;
+            background-color: #b68511;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            justify-content: center;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .card {
+            position: relative;
+            width: 200px;
+            height: 270px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            color: black;
+            text-align: left;
+            width: 500px;
+        }
+        .modal h2 {
+            text-align: center;
+        }
+        .modal .stats {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .modal .stats li {
+            font-size: 16px;
+        }
+        .modal .weapon-armor {
+            margin-top: 20px;
+        }
+        .modal .weapon-armor div {
+            margin-bottom: 10px;
+        }
+        .modal button {
+            background-color: #e67e22;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .modal button:hover {
+            background-color: #d35400;
+        }
+        .modal .close-btn {
+            background-color: #7f8c8d;
+            margin-top: 10px;
+        }
+        .modal .close-btn:hover {
+            background-color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Races</h1>
+    <div class="container">
+        <div class="card" onclick="showStats('Dwarf')">
+            <img src="dwarf.png" alt="Dwarf">
+        </div>
+        <div class="card" onclick="showStats('Elf')">
+            <img src="elf.png" alt="Elf">
+        </div>
+        <div class="card" onclick="showStats('Human')">
+            <img src="human.png" alt="Human">
+        </div>
+        <div class="card" onclick="showStats('Dragonborn')">
+            <img src="dragonborn.png" alt="Dragonborn">
+        </div>
+        <div class="card" onclick="showStats('Gnome')">
+            <img src="gnome.png" alt="Gnome">
+        </div>
+        <div class="card" onclick="showStats('Half-Orc')">
+            <img src="halfOrc.png" alt="Half-Orc">
+        </div>
+    </div>
+
+    <!-- Modal for Race Stats -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <h2 id="raceName">Enter Stats</h2>
+            <div class="stats">
+                <div>
+                    <h3>Stats</h3>
+                    <ul id="statsList"></ul>
+                </div>
+                <div class="weapon-armor">
+                    <div>
+                        <h3>Weapon</h3>
+                        <p id="weapon"></p>
+                    </div>
+                    <div>
+                        <h3>Armor</h3>
+                        <p id="armor"></p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="goToClassSelection()">Next</button>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedRace = '';
+        let selectedClass = '';
+        let playerData = [];
+        let numPlayers = localStorage["players"];  // Fixed to 4 players
+        let currentPlayerIndex = 0;
+
+        // Define race stats, weapons, and armor
+        const raceData = {
+            Dwarf: {
+                stats: { strength: 16, dexterity: 12, constitution: 18, intelligence: 10, wisdom: 14, charisma: 8 },
+                weapon: "Warhammer",
+                armor: "Steel Plate"
+            },
+            Elf: {
+                stats: { strength: 10, dexterity: 18, constitution: 12, intelligence: 16, wisdom: 14, charisma: 12 },
+                weapon: "Longbow",
+                armor: "Leather Armor"
+            },
+            Human: {
+                stats: { strength: 14, dexterity: 14, constitution: 14, intelligence: 14, wisdom: 12, charisma: 16 },
+                weapon: "Sword",
+                armor: "Chainmail"
+            },
+            Dragonborn: {
+                stats: { strength: 18, dexterity: 14, constitution: 16, intelligence: 10, wisdom: 12, charisma: 14 },
+                weapon: "Greatsword",
+                armor: "Dragonhide Armor"
+            },
+            Gnome: {
+                stats: { strength: 8, dexterity: 16, constitution: 12, intelligence: 18, wisdom: 14, charisma: 10 },
+                weapon: "Dagger",
+                armor: "Robes"
+            },
+            "Half-Orc": {
+                stats: { strength: 18, dexterity: 12, constitution: 16, intelligence: 8, wisdom: 10, charisma: 10 },
+                weapon: "Axe",
+                armor: "Hide Armor"
+            }
+        };
+
+        // Define class modifiers
+        const classData = {
+            Knight: { modifier: '+5 Strength' },
+            Mage: { modifier: '+5 Intelligence' },
+            Archer: { modifier: '+5 Dexterity' },
+            Tank: { modifier: '+5 Constitution' },
+            Charmer: { modifier: '+5 Charisma' },
+            Monk: { modifier: '+5 Wisdom' }
+        };
+
+        function askForRace() {
+    if (currentPlayerIndex < numPlayers) {
+        alert(`Player ${currentPlayerIndex + 1}, select your race.`);
+        document.getElementById('statsModal').style.display = 'none';
+    } else {
+        finishCharacterSelection();
+    }
+}
+
+// Function to display stats modal when selecting a race
+function showStats(race) {
+    if (currentPlayerIndex >= numPlayers) return;  // Prevents adding extra players
+
+    selectedRace = race;
+    const data = raceData[race];
+
+    document.getElementById('raceName').innerText = `Player ${currentPlayerIndex + 1}: ${race}`;
+    
+    const statsList = document.getElementById('statsList');
+    statsList.innerHTML = '';
+    for (const [stat, value] of Object.entries(data.stats)) {
+        const li = document.createElement('li');
+        li.textContent = `${stat.charAt(0).toUpperCase() + stat.slice(1)}: ${value}`;
+        statsList.appendChild(li);
+    }
+
+    document.getElementById('weapon').textContent = data.weapon;
+    document.getElementById('armor').textContent = data.armor;
+    
+    document.getElementById('statsModal').style.display = 'flex';
+}
+
+// Function to proceed to class selection
+function goToClassSelection() {
+    document.getElementById('statsModal').style.display = 'none';
+    showClassSelection();
+}
+
+// Function to show class selection
+function showClassSelection() {
+    let classSelectionModal = document.createElement('div');
+    classSelectionModal.setAttribute('id', 'classModal');
+    classSelectionModal.setAttribute('class', 'modal');
+    classSelectionModal.innerHTML = `
+        <div class="modal-content">
+            <h2>Select Class for Player ${currentPlayerIndex + 1}: ${selectedRace}</h2>
+            <div>
+                <button onclick="selectClass('Knight')">Knight (+5 Strength)</button>
+                <button onclick="selectClass('Mage')">Mage (+5 Intelligence)</button>
+                <button onclick="selectClass('Archer')">Archer (+5 Dexterity)</button>
+                <button onclick="selectClass('Tank')">Tank (+5 Constitution)</button>
+                <button onclick="selectClass('Charmer')">Charmer (+5 Charisma)</button>
+                <button onclick="selectClass('Monk')">Monk (+5 Wisdom)</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(classSelectionModal);
+    classSelectionModal.style.display = 'flex';
+}
+
+// Function to select class and proceed
+function selectClass(className) {
+    selectedClass = className;
+    
+    // Save the player's race and class
+    playerData.push({ race: selectedRace, class: selectedClass });
+
+    // Remove class selection modal
+    document.getElementById('classModal').remove();
+
+    currentPlayerIndex++;
+
+    if (currentPlayerIndex < numPlayers) {
+        askForRace();  // Move to the next player's race selection
+    } else {
+        finishCharacterSelection();
+    }
+}
+
+// Function to finish character selection
+function finishCharacterSelection() {
+    let playerSummary = "All players have selected their race and class:\n\n";
+    
+    playerData.forEach((player, index) => {
+        playerSummary += `Player ${index + 1}: Race - ${player.race}, Class - ${player.class}\n`;
+    });
+
+    alert(playerSummary);  // Shows player selections in a pop-up
+    console.log("Final Player Data:", playerData);  // Logs player data for debugging
+    localStorage.setItem("playerData", JSON.stringify(playerData));
+    // Redirect or start the main game
+        fetch('/receive_list', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ players: playerData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Server response:', data);  // Log response from Flask
+        alert(data.message);  // Display server response
+    })
+    .catch(error => {
+        console.error('Fetch Error:', error);
+    });
+    window.location.href = "/main_page";  // Example next step
+}
+
+// Function to close the modal
+function closeModal() {
+    document.getElementById('statsModal').style.display = 'none';
+}
+    </script>
+</body>
+</html>

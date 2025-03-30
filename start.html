@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medieval Adventures</title>
+    <style>
+        body {
+            font-family: papyrus;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('https://preview.redd.it/b0566dl3sw121.jpg?width=1080&crop=smart&auto=webp&s=da3ecc9f633fe66444e5957bfcb4d92e8a484ee5'); /* Replace with your image URL */
+            background-size: cover;
+            background-position: center;
+        }
+        h1 {
+            font-size: 4em;
+            margin-bottom: 40px;
+            text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.7);
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .game-button {
+            background-color: rgba(230, 126, 34, 0.8);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+            font-family: papyrus;
+        }
+        .game-button:hover {
+            background-color: rgba(211, 84, 0, 0.8);
+        }
+        footer {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            font-size: 1em;
+            text-align: center;
+            color: #ecf0f1;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            color: black;
+            text-align: center;
+        }
+        .modal input {
+            padding: 10px;
+            font-size: 1.2em;
+            margin: 20px 0;
+            width: 50px;
+            text-align: center;
+        }
+        .modal button {
+            background-color: #e67e22;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .modal button:hover {
+            background-color: #d35400;
+        }
+        .back-button {
+            background-color: #7f8c8d;
+        }
+        .back-button:hover {
+            background-color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Medieval Adventures</h1>
+    <div class="button-container">
+        <button class="game-button" onclick="newGame()">New Game</button>
+        <button class="game-button" onclick="continueGame()">Continue</button>
+        <button class="game-button" onclick="help()">Help</button>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Medieval Adventures | All Rights Reserved</p>
+    </footer>
+
+    <!-- Modal for Player Number Input -->
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <h2>Enter Number of Players (1-4)</h2>
+            <input type="number" id="numPlayers" min="1" max="4" placeholder="1" />
+            <br />
+            <button class="back-button" onclick="closeModal()">Back</button>
+            <button onclick="startGame()">Next</button>
+        </div>
+    </div>
+
+    <script>
+        function newGame() {
+            // Display the modal for player number input
+            document.getElementById('playerModal').style.display = 'flex';
+        }
+
+        function continueGame() {
+            alert('Continuing your adventure...');
+            // Replace with logic to continue a saved game
+        }
+
+        function help() {
+            alert('Here you can find information on how to play.');
+            // Replace with a pop-up or page redirect to show help/instructions
+        }
+
+        function startGame() {
+            // Get the number of players entered
+            var numPlayers = document.getElementById('numPlayers').value;
+            
+            localStorage["players"] = numPlayers;
+
+            // Validate the number of players input
+            if (numPlayers < 1 || numPlayers > 4) {
+                alert('Please enter a valid number of players (1-4).');
+                return;
+            }
+            
+            // Hide the modal
+            document.getElementById('playerModal').style.display = 'none';
+
+            // Redirect to a new page (you can replace this URL with the actual game page URL)
+            window.location.href = "/race"; // Example URL with player count
+        }
+
+        function closeModal() {
+            // Hide the modal and return to the main game screen
+            document.getElementById('playerModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

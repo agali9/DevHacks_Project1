@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Game Master</title>
+<style>
+body {
+    background-color: #1e1e1e;
+    color: white;
+    font-family: 'Papyrus', cursive;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    color: #FFD700;
+}
+
+#prompt {
+    margin-bottom: 20px;
+    font-style: italic;
+    color: #ccc;
+    font-size: 1.2rem;
+    text-align: center;
+    max-width: 800px;
+}
+
+#chat {
+    width: 80%;
+    max-width: 800px;
+    height: 500px;
+    border: 2px solid #555;
+    padding: 10px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    background-color: #2e2e2e;
+    border-radius: 10px;
+}
+
+#controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+input, button {
+    font-family: 'Papyrus', cursive;
+    font-size: 1.2rem;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: 2px solid #444;
+    background-color: #444;
+    color: white;
+}
+
+input[type="text"] {
+    width: 60%;
+    max-width: 400px;
+    background-color: #333;
+}
+
+button:hover {
+    background-color: #3a3a3a;
+}
+
+#bottomBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #12121c;
+    border-top: 2px solid #333;
+    width: 100%;
+    max-width: 900px;
+    border-radius: 10px;
+}
+
+#playerIcons {
+    display: flex;
+    gap: 10px;
+}
+
+.playerIcon {
+    width: 50px;
+    height: 50px;
+    background-color: #444;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.playerIcon:hover {
+    background-color: #666;
+}
+
+#voiceControls {
+    display: flex;
+    gap: 10px;
+}
+
+#voiceControls button {
+    background-color: #3a3aff;
+    color: white;
+    font-size: 1.2rem;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#voiceControls button:hover {
+    background-color: #2a2aff;
+}
+
+#playerPopup {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    left: 20px;
+    background-color: #2c2c3c;
+    color: white;
+    padding: 20px;
+    border: 2px solid #555;
+    border-radius: 10px;
+    z-index: 1000;
+    max-width: 350px;
+    width: 100%;
+}
+
+#playerPopup h2 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+#playerPopup p {
+    font-size: 1.1rem;
+    margin: 5px 0;
+}
+
+#playerPopup button {
+    background-color: #ff4747;
+    color: white;
+    padding: 10px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+}
+
+#playerPopup button:hover {
+    background-color: #e64c4c;
+}
+</style>
+</head>
+<body>
+<h1>D&D Game Master</h1>
+
+<div id="chat"></div>
+
+<div id="controls">
+    <input type="text" id="userInput" placeholder="What do you do?">
+    <button onclick="sendMessage()">Send</button>
+    <label>
+        <input type="checkbox" id="voiceToggle" checked>
+        Voice On
+    </label>
+</div>
+
+<div id="bottomBar">
+    <div id="playerIcons">
+        {% for player in players %}
+    <button class="playerIcon" onclick="showPlayerPopup({{ loop.index }})">
+        Player {{ loop.index }}
+    </button>
+{% endfor %}
+
+    </div>
+</div>
+
+<div id="playerPopup" style="display: none;">
+    <h2 id="popupTitle"></h2>
+    <p><b>Race:</b> <span id="popupRace"></span></p>
+    <p><b>Class:</b> <span id="popupClass"></span></p>
+    <p><b>Strength:</b> <span id="popupStrength"></span></p>
+    <p><b>Dexterity:</b> <span id="popupDexterity"></span></p>
+    <p><b>Constitution:</b> <span id="popupConstitution"></span></p>
+    <p><b>Intelligence:</b> <span id="popupIntelligence"></span></p>
+    <p><b>Wisdom:</b> <span id="popupWisdom"></span></p>
+    <p><b>Charisma:</b> <span id="popupCharisma"></span></p>
+    <button onclick="closePopup()">Close</button>
+</div>
+
+<script>
+const chatBox = document.getElementById("chat");
+const OPENAI_API_KEY = "sk-"; 
+const systemPrompt = {
+role: "system",
+content: "You are the Game Master (GM) of a live Dungeons & Dragons campaign. Narrate the world vividly, describe scenes, and roleplay characters through dialogue. You speak in one consistent GM voice, even when quoting characters. You respond to player actions in real time and move the story forward dynamically."
+};
+
+let messages = [systemPrompt];
+let currentAudio = null;
+
+function appendMessage(sender, text) {
+const msg = document.createElement("div");
+msg.innerHTML = `<b>${sender}:</b> ${text}`;
+chatBox.appendChild(msg);
+chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function speak(text) {
+if (!document.getElementById("voiceToggle").checked) return;
+
+if (currentAudio) {
+currentAudio.pause();
+currentAudio = null;
+}
+
+fetch("https://api.openai.com/v1/audio/speech", {
+method: "POST",
+headers: {
+"Authorization": `Bearer ${OPENAI_API_KEY}`,
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+model: "tts-1",
+input: text,
+voice: "shimmer"
+})
+})
+.then(res => res.blob())
+.then(blob => {
+const url = URL.createObjectURL(blob);
+currentAudio = new Audio(url);
+currentAudio.play();
+});
+}
+
+function sendMessage() {
+const input = document.getElementById("userInput");
+const text = input.value.trim();
+if (!text) return;
+
+appendMessage("Player", text);
+messages.push({ role: "user", content: text });
+input.value = "";
+
+fetch("https://api.openai.com/v1/chat/completions", {
+method: "POST",
+headers: {
+"Authorization": `Bearer ${OPENAI_API_KEY}`,
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+model: "gpt-4o-mini",
+messages: messages
+})
+})
+.then(res => res.json())
+.then(data => {
+const reply = data.choices[0].message.content;
+appendMessage("GM", reply);
+messages.push({ role: "assistant", content: reply });
+speak(reply); // Immediately start voice
+});
+}
+
+// Auto-start on load
+window.onload = () => {
+fetch("https://api.openai.com/v1/chat/completions", {
+method: "POST",
+headers: {
+"Authorization": `Bearer ${OPENAI_API_KEY}`,
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+model: "gpt-4o-mini",
+messages: [systemPrompt]
+})
+})
+.then(res => res.json())
+.then(data => {
+const intro = data.choices[0].message.content;
+appendMessage("GM", intro);
+messages.push({ role: "assistant", content: intro });
+speak(intro); // Play voice immediately
+});
+};
+function getPlayerStats(player) {
+    const raceStats = {
+        "Human": { Strength: 8, Dexterity: 8, Constitution: 8, Intelligence: 8, Wisdom: 9, Charisma: 9 },
+        "Dwarf": { Strength: 9, Dexterity: 6, Constitution: 10, Intelligence: 7, Wisdom: 9, Charisma: 9 },
+        "Dragonborn": { Strength: 10, Dexterity: 7, Constitution: 9, Intelligence: 6, Wisdom: 7, Charisma: 11 },
+        "Elf": { Strength: 6, Dexterity: 10, Constitution: 7, Intelligence: 9, Wisdom: 10, Charisma: 8 },
+        "Gnome": { Strength: 5, Dexterity: 8, Constitution: 7, Intelligence: 11, Wisdom: 8, Charisma: 11 },
+        "Half-Orc": { Strength: 11, Dexterity: 8, Constitution: 10, Intelligence: 6, Wisdom: 6, Charisma: 9 }
+    };
+
+    const classModifiers = {
+        "Mage": { Strength: 0, Dexterity: 0, Constitution: 0, Intelligence: 5, Wisdom: 0, Charisma: 0 },
+        "Knight": { Strength: 5, Dexterity: 0, Constitution: 5, Intelligence: 0, Wisdom: 0, Charisma: 0 },
+        "Archer": { Strength: 0, Dexterity: 5, Constitution: 0, Intelligence: 0, Wisdom: 0, Charisma: 0 },
+        "Tank": { Strength: 0, Dexterity: 0, Constitution: 5, Intelligence: 0, Wisdom: 0, Charisma: 0 },
+        "Charmer": { Strength: 0, Dexterity: 0, Constitution: 0, Intelligence: 0, Wisdom: 0, Charisma: 5 },
+        "Monk": { Strength: 0, Dexterity: 0, Constitution: 0, Intelligence: 0, Wisdom: 5, Charisma: 0 }
+    };
+
+    // Get base race stats and add class modifiers
+    const raceStatsData = raceStats[player.race];
+    const classStatsData = classModifiers[player.class];
+    
+    const finalStats = {};
+    for (let stat in raceStatsData) {
+        finalStats[stat] = raceStatsData[stat] + classStatsData[stat];
+    }
+
+    return finalStats;
+}
+
+// Show player popup with all details
+function showPlayerPopup(index) {
+    const player = {{ players | tojson }}[index - 1]; // Adjust index for 0-based access
+    const stats = getPlayerStats(player);
+
+    document.getElementById("popupTitle").innerText = "Player " + index + "'s Info";
+    document.getElementById("popupRace").innerText = player.race;
+    document.getElementById("popupClass").innerText = player.class;
+    document.getElementById("popupStrength").innerText = stats.Strength;
+    document.getElementById("popupDexterity").innerText = stats.Dexterity;
+    document.getElementById("popupConstitution").innerText = stats.Constitution;
+    document.getElementById("popupIntelligence").innerText = stats.Intelligence;
+    document.getElementById("popupWisdom").innerText = stats.Wisdom;
+    document.getElementById("popupCharisma").innerText = stats.Charisma;
+
+    document.getElementById("playerPopup").style.display = "block";
+}
+
+function closePopup() {
+    document.getElementById("playerPopup").style.display = "none";
+}
+</script>
+</body>
+</html>
